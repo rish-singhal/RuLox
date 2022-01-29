@@ -4,6 +4,8 @@ use std::io;
 use std::io::Write; // <--- bring flush() into scope
 use std::process;
 
+static mut had_error: bool = false;
+
 fn main() {
     let args_count = env::args().count();
     if args_count > 2 {
@@ -20,6 +22,12 @@ fn run_file(path: String) {
     let contents = fs::read_to_string(path)
         .expect("Error reading script");
     run(contents);
+
+    unsafe{
+        if had_error {
+            process::exit(65);
+        }
+    }
 }
 
 fn run_prompt() {
@@ -30,12 +38,31 @@ fn run_prompt() {
 
         if let Ok(_) = io::stdin().read_line(&mut line) {
             run(line);
+            unsafe {
+                had_error = false;
+            }
         } else {
             break;
         }
     }
 }
 
-fn run(lines: String) {
-    println!("{}", lines);
+fn run(source: String) {
+    let scanner = Scanner { source };
+    let tokens = scanner.scan_tokens();
+
+    for token in tokens.iter() {
+       println!("{:?}", token);
+    }
+}
+
+fn error(line: u32, message: String) {
+    report(line, String::from(""), message);
+}
+
+fn report(line: u32, where_error: String, message: String) {
+    eprintln!("[line {}] Error{}: {}", line, where_error, message);
+    unsafe {
+        had_error = true;
+    }
 }
