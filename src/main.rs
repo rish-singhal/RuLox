@@ -61,7 +61,7 @@ fn run(source: String) {
     // }
 }
 
-fn error(line: u32, message: String) {
+pub fn error(line: u32, message: String) {
     report(line, String::from(""), message);
 }
 

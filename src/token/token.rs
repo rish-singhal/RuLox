@@ -1,9 +1,9 @@
-use super::token_type::*;
+use crate::token::token_type::{ TokenType, Literal };
 
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
-    literal: Literal,
+    literal: Option<Literal>,
     line: u32,
 }
 
@@ -14,3 +14,4 @@ impl Token {
             .to_string();
     }
 }
+
