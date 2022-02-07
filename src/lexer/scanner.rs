@@ -1,6 +1,6 @@
 use crate::error;
 use crate::token::token::Token;
-use crate::token::token_type::{ TokenType, Literal };
+use crate::token::token_type::{ TokenType, Literal, get_token_type };
 
 struct Scanner {
     source: String,
@@ -92,13 +92,17 @@ impl Scanner {
             _ => {
                 if c.is_digit(10) {
                     self.number();
-                } else {
-                    error(self.line, "Unexpected character.".to_string())
+                } else if self.is_alpha(c){
+                    self.identifier();
+                }
+                else {
+                    error(self.line, "Unexpected character.".to_string());
                 }
             }
         };
     }
 
+    // TODO: error handling of finding nth character
     fn advance(&self) -> char {
         self.current += 1;
         return self.source.chars().nth(self.current as usize - 1).unwrap();
@@ -132,6 +136,14 @@ impl Scanner {
         self.current >= self.source.len() as u32
     }
 
+    fn is_alpha(&self, c: char) -> bool {
+        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+    }
+
+    fn is_alpha_numeric(&self, c: char) -> bool {
+        self.is_alpha(c) || c.is_digit(10)
+    }
+
     fn match_char(&self, expected: char) -> bool {
         if self.is_at_end() {
            return false;
@@ -154,6 +166,7 @@ impl Scanner {
         return self.source.chars().nth(self.current as usize).unwrap();
     }
 
+    // scanner just look ahead atmost one character
     fn peek_next(&self) -> char {
         if self.current + 1 >= self.source.len() as u32 {
             return '\0';
@@ -185,7 +198,36 @@ impl Scanner {
     }
 
     fn number(&self) {
+        while self.peek().is_digit(10) {
+            self.advance();
+        }
 
+        if self.peek() == '.' && self.peek_next().is_digit(10) {
+            self.advance();
+
+            while self.peek().is_digit(10) {
+                self.advance();
+            }
+        }
+
+        let value = self.source[
+            self.start as usize..self.current as usize
+        ].parse::<f64>();
+
+        // TODO: Implement float in Literal enum
+        self.add_token_literal(
+            TokenType::NUMBER,
+            literal: value
+        );
+    }
+
+    fn identifier(&self) {
+        while self.peek().is_alphanumeric() {
+            self.advance();
+        }
+        let text: &str = &self.source[self.start as usize..self.current as usize];
+
+        self.add_token(get_token_type(text));
     }
 }
 
