@@ -2,7 +2,7 @@ use crate::error;
 use crate::token::token::Token;
 use crate::token::token_type::{ TokenType, Literal, get_token_type };
 
-struct Scanner {
+pub struct Scanner {
     source: String,
     tokens: Vec<Token>,
     start: u32,
@@ -21,27 +21,27 @@ impl Scanner {
         }
     }
 
-    pub fn scan_tokens(&self) -> Vec<Token> {
+    pub fn scan_tokens(&mut self) -> Vec<Token> {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token();    
         }
+
         self.tokens.push(Token{ 
             token_type: TokenType::EOF,
             lexeme: String::from(""),
-            literal: None,
             line: self.line 
         });
-        return self.tokens;
+        return self.tokens.clone();
     }
 
-    fn scan_token(&self) {
+    fn scan_token(&mut self) {
         let c = self.advance();
         match c {
-            '(' => self.add_token(TokenType::LEFT_PAREN),
-            ')' => self.add_token(TokenType::RIGHT_PAREN),
-            '{' => self.add_token(TokenType::LEFT_BRACE),
-            '}' => self.add_token(TokenType::RIGHT_BRACE),
+            '(' => self.add_token(TokenType::LeftParen),
+            ')' => self.add_token(TokenType::RightParen),
+            '{' => self.add_token(TokenType::LeftBrace),
+            '}' => self.add_token(TokenType::RightBrace),
             ',' => self.add_token(TokenType::COMMA),
             '-' => self.add_token(TokenType::MINUS),
             '+' => self.add_token(TokenType::PLUS),
@@ -49,28 +49,28 @@ impl Scanner {
             '*' => self.add_token(TokenType::STAR),
             '!' => {
                 if self.match_char('=') {
-                    self.add_token(TokenType::BANG_EQUAL);
+                    self.add_token(TokenType::BangEqual);
                 } else {
                     self.add_token(TokenType::BANG);
                 }
             },
             '=' => {
                 if self.match_char('=') {
-                    self.add_token(TokenType::EQUAL_EQUAL);
+                    self.add_token(TokenType::EqualEqual);
                 } else {
                     self.add_token(TokenType::EQUAL);
                 }
             },
             '<' => {
                 if self.match_char('=') {
-                    self.add_token(TokenType::LESS_EQUAL);
+                    self.add_token(TokenType::LessEqual);
                 } else {
                     self.add_token(TokenType::LESS);
                 }
             },
             '>' => {
                 if self.match_char('=') {
-                    self.add_token(TokenType::GREATER_EQUAL);
+                    self.add_token(TokenType::GreaterEqual);
                 } else {
                     self.add_token(TokenType::GREATER);
                 }
@@ -102,32 +102,34 @@ impl Scanner {
         };
     }
 
-    // TODO: error handling of finding nth character
-    fn advance(&self) -> char {
+    fn advance(&mut self) -> char {
         self.current += 1;
-        return self.source.chars().nth(self.current as usize - 1).unwrap();
+        if let Some(c) = self.source.chars().nth(self.current as usize - 1) {
+            return c;
+        } else {
+            eprintln!("Error: Reached end of source but advance was called.");
+            return '\0';
+        }
     }
 
-    fn add_token(&self, token: TokenType) {
+    fn add_token(&mut self, token: TokenType) {
         let text = self.source[self.start as usize..self.current as usize]
             .to_string();
 
         self.tokens.push(Token{
             token_type: token,
             lexeme: text,
-            literal: None,
             line: self.line
         });
     }
 
-    fn add_token_literal(&self, token: TokenType, literal: Literal) {
+    fn add_token_literal(&mut self, token: TokenType) {
         let text = self.source[self.start as usize..self.current as usize]
             .to_string();
 
         self.tokens.push(Token{
             token_type: token,
             lexeme: text,
-            literal: Some(literal),
             line: self.line
         });
     }
@@ -144,7 +146,7 @@ impl Scanner {
         self.is_alpha(c) || c.is_digit(10)
     }
 
-    fn match_char(&self, expected: char) -> bool {
+    fn match_char(&mut self, expected: char) -> bool {
         if self.is_at_end() {
            return false;
         }
@@ -163,20 +165,21 @@ impl Scanner {
             return '\0';
         }
 
+        // unwrapping assuming above statement is true
         return self.source.chars().nth(self.current as usize).unwrap();
     }
 
     // scanner just look ahead atmost one character
-    fn peek_next(&self) -> char {
+    fn peek_next(&mut self) -> char {
         if self.current + 1 >= self.source.len() as u32 {
             return '\0';
         }
 
+        // unwrapping as above statement is true
         return self.source.chars().nth((self.current + 1) as usize).unwrap();
     }
 
-    // TODO: Implement string in Literal enum 
-    fn string(&self) {
+    fn string(&mut self) {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -194,10 +197,11 @@ impl Scanner {
         let value = self.source[
             self.start as usize + 1..self.current as usize - 1
         ].to_string();
-        self.add_token_literal(TokenType::STRING, literal: value);
+
+        self.add_token_literal(TokenType::LITERAL(Literal::STRING(value)));
     }
 
-    fn number(&self) {
+    fn number(&mut self) {
         while self.peek().is_digit(10) {
             self.advance();
         }
@@ -210,22 +214,23 @@ impl Scanner {
             }
         }
 
+        // assuming that the number is valid~ that's why using unwrap()
+        // without error handling
         let value = self.source[
             self.start as usize..self.current as usize
-        ].parse::<f64>();
+        ].parse::<f64>().unwrap();
 
-        // TODO: Implement float in Literal enum
-        self.add_token_literal(
-            TokenType::NUMBER,
-            literal: value
-        );
+        self.add_token_literal(TokenType::LITERAL(Literal::NUMBER(value)));
     }
 
-    fn identifier(&self) {
-        while self.peek().is_alphanumeric() {
+    fn identifier(&mut self) {
+        while self.is_alpha_numeric(self.peek()) {
             self.advance();
         }
-        let text: &str = &self.source[self.start as usize..self.current as usize];
+
+        let text: String = 
+            self.source[self.start as usize..self.current as usize]
+                .to_string();
 
         self.add_token(get_token_type(text));
     }

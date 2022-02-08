@@ -1,6 +1,8 @@
 pub mod token;
 pub mod lexer;
 
+use crate::lexer::scanner::Scanner;
+
 use std::env;
 use std::fs;
 use std::io;
@@ -52,13 +54,9 @@ fn run_prompt() {
 }
 
 fn run(source: String) {
-    println!("{}", source);
-    // let scanner = Scanner { source };
-    // let tokens = scanner.scan_tokens();
-    //
-    // for token in tokens.iter() {
-    //    println!("{:?}", token);
-    // }
+    println!("source: {}", source);
+    let tokens = Scanner::new(source).scan_tokens();
+    println!("{:?}", tokens);
 }
 
 pub fn error(line: u32, message: String) {

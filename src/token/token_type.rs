@@ -1,18 +1,24 @@
-use std::collections::HashMap;
-
+#[derive(Debug, Clone)]
 pub enum TokenType {
     // Single-character tokens.
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
     COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
 
     // One or two character tokens.
-    BANG, BANG_EQUAL,
-    EQUAL, EQUAL_EQUAL,
-    GREATER, GREATER_EQUAL,
-    LESS, LESS_EQUAL,
+    BANG,
+    BangEqual,
+    EQUAL,
+    EqualEqual,
+    GREATER,
+    GreaterEqual,
+    LESS,
+    LessEqual,
 
     // Literals.
-    IDENTIFIER, STRING, NUMBER,
+    LITERAL(Literal), 
 
     // Keywords.
     AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
@@ -21,12 +27,25 @@ pub enum TokenType {
     EOF
 }
 
+#[derive(Debug, Clone)]
 pub enum Literal {
-// to be added
+    IDENTIFIER(String),
+    STRING(String),
+    NUMBER(f64),
+    BOOL(bool),
 }
 
-pub fn get_token_type(literal: &str) -> TokenType {
-    match literal {
+impl std::fmt::Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            TokenType::LITERAL(literal) => write!(f, "{:?}", literal),
+            _ => write!(f, "{:?}", self)
+        }
+    }
+}
+
+pub fn get_token_type(literal: String) -> TokenType {
+    match &literal[..] {
         "and" => TokenType::AND,
         "class" =>TokenType::CLASS,
         "else" => TokenType::ELSE,
@@ -43,7 +62,9 @@ pub fn get_token_type(literal: &str) -> TokenType {
         "true" => TokenType::TRUE,
         "var" => TokenType::VAR,
         "while" => TokenType::WHILE,
-        _ => TokenType::IDENTIFIER,
+        // assuming IDENTIFIER is returned as this function is called only
+        // for identifier & keyword segregation
+        _ => TokenType::LITERAL(Literal::IDENTIFIER(literal.to_string()))
     }
 }
 
