@@ -3,19 +3,51 @@
 ## Instructions
 
 1. Compile the program
-```
+```bash
 $ rustc src/main.rs
 ```
 
 2. Execute as REPL
-```
+```bash
 $ ./main
 >
 ```
 
 or give a lox script as input
-```
+```bash
 $ ./main [FILE_NAME]
+```
+
+## Syntax Grammar
+
+### Version 1
+
+```text
+expression -> literal
+            | grouping
+            | unary
+            | binary;
+
+literal -> NUMBER
+         | STRING
+         | "true"
+         | "false"
+         | "nil";
+
+grouping -> "(" expression ")";
+
+binary -> expression operator expression;
+
+operator -> "*"
+          | "/"
+          | "-"
+          | "+"
+          | "=="
+          | "!="
+          | "<"
+          | ">"
+          | "<="
+          | ">=";
 ```
 
 ## Further Questions

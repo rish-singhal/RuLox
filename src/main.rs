@@ -27,6 +27,7 @@ fn main() {
 fn run_file(path: String) {
     let contents = fs::read_to_string(path)
         .expect("Error reading script");
+
     run(contents);
 
     unsafe{
@@ -36,6 +37,7 @@ fn run_file(path: String) {
     }
 }
 
+// READ-EVAL-PRINT-LOOP (REPL)
 fn run_prompt() {
     loop {
         print!("> ");
