@@ -1,4 +1,4 @@
-[#](#) Interpreter for Lox language
+# Interpreter for Lox language
 
 ## Instructions
 
@@ -19,6 +19,20 @@ $ ./main [FILE_NAME]
 ```
 
 ## Syntax Grammar
+
+### Version 2 (Operator Precedence)
+
+```text
+expression -> equality ;
+equality -> comparison ( ( "!=" | "==" ) comparison )* ;
+comparison -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term -> factor ( ( "-" | "+" ) factor )* ;
+factor -> unary ( ( "/" | "*" ) unary )* ;
+unary -> ( "!" | "-" ) unary
+               | primary ;
+primary -> NUMBER | STRING | "true" | "false" | "nil"
+               | "(" expression ")" ;
+```
 
 ### Version 1
 

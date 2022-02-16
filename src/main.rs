@@ -4,6 +4,8 @@ pub mod ast;
 pub mod parser;
 pub mod tests;
 
+use token::token::Token;
+use token::token_type::TokenType;
 use crate::lexer::scanner::Scanner;
 use crate::tests::test_ast_printer::test_ast_printer;
 
@@ -68,6 +70,15 @@ fn run(source: String) {
     println!("source: {}", source);
     let tokens = Scanner::new(source).scan_tokens();
     println!("{:?}", tokens);
+}
+
+pub fn error_token(token: Token, message: String) {
+    match token.token_type {
+        TokenType::EOF => report(token.line, " at end".to_string(), message),
+        _ => report(token.line,
+                    format!(" at '{}'", token.lexeme).to_string(),
+                    message)
+    }
 }
 
 pub fn error(line: u32, message: String) {

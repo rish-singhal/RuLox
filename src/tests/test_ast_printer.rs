@@ -26,20 +26,21 @@ pub fn test_ast_printer() {
             line: 1
         },
         right: Box::new(
-                   Expr::Literal(
+                   Expr::Grouping( node::Grouping {
+                   expression: Box::new(Expr::Literal(
                        node::Literal {
                            value: Token{
                                token_type: TokenType::LITERAL(
                                                token_type::Literal::NUMBER(
-                                                   2.0
+                                                   45.67
                                                    )
                                                ),
-                               lexeme: "2".to_string(),
+                               lexeme: "45.67".to_string(),
                                line: 2
                            }
                        }
                        )
-                   ),
+                   )})),
     });
 
     if let Expr::Binary(binary) = expr {
