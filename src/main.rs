@@ -1,7 +1,11 @@
 pub mod token;
 pub mod lexer;
+pub mod ast;
+pub mod parser;
+pub mod tests;
 
 use crate::lexer::scanner::Scanner;
+use crate::tests::test_ast_printer::test_ast_printer;
 
 use std::env;
 use std::fs;
@@ -18,7 +22,12 @@ fn main() {
         println!("Usage: rulox [script]");
         process::exit(64); 
     } else if args_count == 2 {
-        run_file(env::args().nth(1).unwrap());
+        let script = env::args().nth(1).unwrap();
+        if script == "test" {
+            test_ast_printer();
+        } else {
+            run_file(env::args().nth(1).unwrap());
+        }
     } else {
         run_prompt();
     }
@@ -71,3 +80,4 @@ fn report(line: u32, where_error: String, message: String) {
         HAD_ERROR = true;
     }
 }
+
