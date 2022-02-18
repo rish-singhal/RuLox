@@ -78,10 +78,14 @@ operator -> "*"
 1. [Generic returns in Rust](https://blog.jcoglan.com/2019/04/22/generic-returns-in-rust/)
 2. [Variadic functions](https://stackoverflow.com/questions/28951503/how-can-i-create-a-function-with-a-variable-number-of-arguments)
 
-## Sources
+## Resources
 
 1. [Crafting Interpretors: Lox](https://craftinginterpreters.com/)
 2. [Rolox: SarcasticNastik](https://github.com/SarcasticNastik/rolox)
+
+### Rust Resources
+
+1. [Unofficial Rust Docs](https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html)
 
 ## Author
 

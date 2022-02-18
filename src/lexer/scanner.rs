@@ -24,10 +24,10 @@ impl Scanner {
     pub fn scan_tokens(&mut self) -> Vec<Token> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();    
+            self.scan_token();
         }
 
-        self.tokens.push(Token{ 
+        self.tokens.push(Token { 
             token_type: TokenType::EOF,
             lexeme: String::from(""),
             line: self.line 
