@@ -17,7 +17,7 @@ base_productions = {
       "Binary   : Expr left, Token operator, Expr right",
       "Grouping : Expr expression",
       "Literal  : Token value",
-      "Unary    : Token operator, Expr right"
+      "Unary    : Token operator, Expr right",
     ]
 }
 

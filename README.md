@@ -86,6 +86,7 @@ operator -> "*"
 ### Rust Resources
 
 1. [Unofficial Rust Docs](https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html)
+2. [How Rusty is your Rust: Solana Resource](https://safari.study/courses/how-rusty-is-your-rust-lang/)
 
 ## Author
 
