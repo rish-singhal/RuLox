@@ -32,7 +32,6 @@ pub enum Literal {
     IDENTIFIER(String),
     STRING(String),
     NUMBER(f64),
-    BOOL(bool),
 }
 
 impl std::fmt::Display for TokenType {

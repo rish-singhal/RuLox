@@ -8,17 +8,7 @@ fn paranthesize(name: String, exprs: &[&Box<Expr>]) -> String {
     builder.push_str(&("(".to_string() + &name));
     for expr in exprs {
         builder.push_str(&(" ".to_string()));
-        // TODO: is there a way to avoid repetition here?
-        match &***expr {
-            Expr::Binary(obj) =>
-                builder.push_str(&obj.accept(&mut ast_printer)),
-            Expr::Grouping(obj) =>
-                builder.push_str(&obj.accept(&mut ast_printer)),
-            Expr::Literal(obj) => 
-                builder.push_str(&obj.accept(&mut ast_printer)),
-            Expr::Unary(obj) =>
-                builder.push_str(&obj.accept(&mut ast_printer)),
-        }
+        builder.push_str(&(*expr).accept(&mut ast_printer));
     }
     builder.push_str(&(")".to_string()));
     return builder;

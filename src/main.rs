@@ -1,11 +1,15 @@
-pub mod token;
-pub mod lexer;
 pub mod ast;
+pub mod interpreter;
 pub mod parser;
 pub mod tests;
+pub mod token;
+pub mod lexer;
 
+#[cfg(debug_lox)]
 use ast::ast_printer::AstPrinter;
+#[cfg(debug_lox)]
 use ast::node::*;
+
 use parser::parser::Parser;
 use token::token::Token;
 use token::token_type::TokenType;
@@ -70,17 +74,23 @@ fn run_prompt() {
 }
 
 fn run(source: String) {
+    #[cfg(debug_lox)]
     println!("source: {}", source);
+
     let tokens = Scanner::new(source).scan_tokens();
+
     unsafe {
         if HAD_ERROR {
             return;
         }
     }
+
+    #[cfg(debug_lox)]
     println!("tokens: {:?}", tokens);
 
     let mut parser = Parser::new(tokens);
     if let Some(expr) = parser.parse() {
+        #[cfg(debug_lox)]
         match *expr {
             Expr::Binary(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
             Expr::Grouping(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),

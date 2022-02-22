@@ -4,18 +4,26 @@
 
 1. Compile the program
 ```bash
-$ rustc src/main.rs
+$ rustc src/main.rs -o lox
 ```
+
+*NOTE:* To compile in debug mode, use the following command:
+
+```bash
+$ rustc src/main -o lox --cfg debug_lox
+```
+
+[Conditional Compilation](https://doc.rust-lang.org/reference/conditional-compilation.html)
 
 2. Execute as REPL
 ```bash
-$ ./main
+$ ./lox
 >
 ```
 
 or give a lox script as input
 ```bash
-$ ./main [FILE_NAME]
+$ ./lox [FILE_NAME]
 ```
 
 ## Syntax Grammar

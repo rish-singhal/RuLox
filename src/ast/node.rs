@@ -7,6 +7,18 @@ pub enum Expr {
     Unary(Unary),
 }
 
+// TODO: add the following in the python script to automate generating
+// this file
+impl Expr {
+    pub fn accept<V: Visitor>(&self, visitor: &mut V) -> V::R {
+        match self {
+            Expr::Binary(binary) => visitor.visit_binary(binary),
+            Expr::Grouping(grouping) => visitor.visit_grouping(grouping),
+            Expr::Literal(literal) => visitor.visit_literal(literal),
+            Expr::Unary(unary) => visitor.visit_unary(unary),
+        }
+    }
+}
 
 pub trait Visitor {
     type R;
@@ -15,23 +27,6 @@ pub trait Visitor {
     fn visit_literal (&self, literal: &Literal) -> Self::R;
     fn visit_unary (&self, unary: &Unary) -> Self::R;
 }
-
-// TODO: To remove the match in structs implementing Visitor strait 
-//
-// trait Nn {
-//     fn accept<V: Visitor<R=()>>(&self, visitor: &V) -> ();
-// }
-
-// impl Nn for Expr {
-//     fn accept<V: Visitor<R=()>>(&self, visitor: &V) -> () {
-//         match self {
-//             Expr::Binary(binary) => visitor.visit_binary(binary),
-//             Expr::Grouping(grouping) => visitor.visit_grouping(grouping),
-//             Expr::Literal(literal) => visitor.visit_literal(literal),
-//             Expr::Unary(unary) => visitor.visit_unary(unary),
-//         }
-//     }
-// }
 
 pub struct Binary {
     pub left: Box<Expr>,
