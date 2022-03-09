@@ -18,12 +18,23 @@ base_productions = {
       "Grouping : Expr expression",
       "Literal  : Token value",
       "Unary    : Token operator, Expr right",
+    ],
+    "Stmt": [
+        "Expression : Expr expression",
+        "Print : Expr expression",
     ]
 }
 
 
+def get_visitor_name(base_name):
+    if base_name == "Expr":
+        return "Visitor"
+    else:
+        return base_name + "Visitor"
+
+
 def define_visitor(f, base_name, types):
-    f.write("pub trait Visitor {\n")
+    f.write("pub trait {} {{\n".format(get_visitor_name(base_name)))
     f.write("    type R;\n")
     for node_type in types:
         node_type = node_type.strip().split(":")[0].strip()
@@ -33,6 +44,26 @@ def define_visitor(f, base_name, types):
                         node_type.lower(),
                         node_type
                     ))
+    f.write("}\n\n")
+
+
+def implement_accept(f, base_name, types):
+    f.write("impl {} {{\n".format(base_name))
+    f.write("    pub fn accept<V: {}>(&self, \
+visitor: &mut V) -> V::R {{\n".format(
+            get_visitor_name(base_name)))
+    f.write("        match self {\n")
+    for node_type in types:
+        node_type = node_type.strip().split(":")[0].strip()
+        f.write("            {}::{}({}) => visitor.visit_{}({}),\n".format(
+                base_name,
+                node_type,
+                node_type.lower(),
+                node_type.lower(),
+                node_type.lower()))
+
+    f.write("        }\n")
+    f.write("    }\n")
     f.write("}\n\n")
 
 
@@ -55,6 +86,8 @@ def main():
                         )
             f.write("}\n\n")
 
+            implement_accept(f, base_class, productions)
+
             define_visitor(f, base_class, productions)
 
             for production in productions:
@@ -74,11 +107,12 @@ def main():
 
                 # implement types using visitor patter
                 f.write("impl {} {{\n".format(class_name))
-                f.write("   pub fn accept<T: Visitor> ")
+                f.write("    pub fn accept<T: {}> "
+                        .format(get_visitor_name(base_class)))
                 f.write("(&self, visitor: &mut T) -> T::R {\n")
-                f.write("       return visitor.visit_{}(&self);\n"
+                f.write("        visitor.visit_{}(self)\n"
                         .format(class_name.lower()))
-                f.write("   }\n")
+                f.write("    }\n")
                 f.write("}\n\n")
 
 

@@ -32,6 +32,17 @@ $ ./lox [FILE_NAME]
 
 ## Syntax Grammar
 
+### Version 3 (Statements)
+
+```text
+program -> statement* EOF;
+
+statement -> exprStmt
+            | printStmt;
+exprStmt -> expression ";" ;
+printStmt -> "print" expression ";";
+```
+
 ### Version 2 (Operator Precedence)
 
 ```text

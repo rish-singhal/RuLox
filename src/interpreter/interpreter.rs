@@ -73,7 +73,7 @@ impl Visitor for Interpreter {
                                 token: binary.operator.clone(),
                                 message:
                                     String::from(
-                                        "Operator not supported on type\
+                                        "Operator not supported on type \
                                         Numbers"
                                     )
                             })
@@ -86,7 +86,7 @@ impl Visitor for Interpreter {
                                 token: binary.operator.clone(),
                                 message:
                                     String::from(
-                                        "Operator not supported on type\
+                                        "Operator not supported on type \
                                         Strings"
                                     )
                             })
@@ -124,7 +124,7 @@ impl Visitor for Interpreter {
                     Value::Number(n) => Ok(Value::Number(-n)),
                     _ => Err(InterpreterError {
                         token: unary.operator.clone(),
-                        message: String::from("Only number can be operated\
+                        message: String::from("Only number can be operated \
                                               on with unary MINUS opeartor")
                     }),
                 }
@@ -136,7 +136,7 @@ impl Visitor for Interpreter {
                     // always returns a type of Value::Bool
                     Err(InterpreterError {
                         token: unary.operator.clone(),
-                        message: String::from("Bang Operator only works on\
+                        message: String::from("Bang Operator only works on \
                                               literal")
                     })
                 }

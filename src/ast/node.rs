@@ -7,8 +7,6 @@ pub enum Expr {
     Unary(Unary),
 }
 
-// TODO: add the following in the python script to automate generating
-// this file
 impl Expr {
     pub fn accept<V: Visitor>(&self, visitor: &mut V) -> V::R {
         match self {
@@ -35,9 +33,9 @@ pub struct Binary {
 }
 
 impl Binary {
-   pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
-       return visitor.visit_binary(&self);
-   }
+    pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
+        visitor.visit_binary(self)
+    }
 }
 
 pub struct Grouping {
@@ -45,9 +43,9 @@ pub struct Grouping {
 }
 
 impl Grouping {
-   pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
-       return visitor.visit_grouping(&self);
-   }
+    pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
+        visitor.visit_grouping(self)
+    }
 }
 
 pub struct Literal {
@@ -55,9 +53,9 @@ pub struct Literal {
 }
 
 impl Literal {
-   pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
-       return visitor.visit_literal(&self);
-   }
+    pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
+        visitor.visit_literal(self)
+    }
 }
 
 pub struct Unary {
@@ -66,8 +64,48 @@ pub struct Unary {
 }
 
 impl Unary {
-   pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
-       return visitor.visit_unary(&self);
-   }
+    pub fn accept<T: Visitor> (&self, visitor: &mut T) -> T::R {
+        visitor.visit_unary(self)
+    }
+}
+
+pub enum Stmt {
+    Expression(Expression),
+    Print(Print),
+}
+
+impl Stmt {
+    pub fn accept<V: StmtVisitor>(&self, visitor: &mut V) -> V::R {
+        match self {
+            Stmt::Expression(expression) => visitor.visit_expression(expression),
+            Stmt::Print(print) => visitor.visit_print(print),
+        }
+    }
+}
+
+pub trait StmtVisitor {
+    type R;
+    fn visit_expression (&self, expression: &Expression) -> Self::R;
+    fn visit_print (&self, print: &Print) -> Self::R;
+}
+
+pub struct Expression {
+    pub expression: Box<Expr>,
+}
+
+impl Expression {
+    pub fn accept<T: StmtVisitor> (&self, visitor: &mut T) -> T::R {
+        visitor.visit_expression(self)
+    }
+}
+
+pub struct Print {
+    pub expression: Box<Expr>,
+}
+
+impl Print {
+    pub fn accept<T: StmtVisitor> (&self, visitor: &mut T) -> T::R {
+        visitor.visit_print(self)
+    }
 }
 
