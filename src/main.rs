@@ -10,6 +10,7 @@ use ast::ast_printer::AstPrinter;
 #[cfg(debug_lox)]
 use ast::node::*;
 
+use interpreter::interpreter::interpret;
 use parser::parser::Parser;
 use token::token::Token;
 use token::token_type::TokenType;
@@ -23,22 +24,25 @@ use std::io::Write; // <--- bring flush() into scope
 use std::process;
 
 static mut HAD_ERROR: bool = false;
+static mut HAD_RUNTIME_ERROR: bool = false;
 
 fn main() {
     let args_count = env::args().count();
 
-    if args_count > 2 {
-        println!("Usage: rulox [script]");
-        process::exit(64); 
-    } else if args_count == 2 {
-        let script = env::args().nth(1).unwrap();
-        if script == "test" {
-            test_ast_printer();
-        } else {
-            run_file(env::args().nth(1).unwrap());
+    match args_count {
+        1 => run_prompt(),
+        2 => {
+            let script = env::args().nth(1).unwrap();
+            if script == "test" {
+                test_ast_printer();
+            } else {
+                run_file(env::args().nth(1).unwrap());
+            }
         }
-    } else {
-        run_prompt();
+        _ => {
+            eprintln!("Usage: rulox [script]");
+            process::exit(64);
+        }
     }
 }
 
@@ -51,6 +55,8 @@ fn run_file(path: String) {
     unsafe{
         if HAD_ERROR {
             process::exit(65);
+        } else if HAD_RUNTIME_ERROR {
+            process::exit(70);
         }
     }
 }
@@ -62,7 +68,7 @@ fn run_prompt() {
         io::stdout().flush().unwrap();
         let mut line = String::new();
 
-        if let Ok(_) = io::stdin().read_line(&mut line) {
+        if io::stdin().read_line(&mut line).is_ok() {
             run(line);
             unsafe {
                 HAD_ERROR = false;
@@ -91,16 +97,24 @@ fn run(source: String) {
     let mut parser = Parser::new(tokens);
     if let Some(expr) = parser.parse() {
         #[cfg(debug_lox)]
-        match *expr {
+        match &(*expr) {
             Expr::Binary(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
             Expr::Grouping(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
             Expr::Literal(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
             Expr::Unary(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
         };
-    } else {
-        return;
-    }
 
+        interpret(&expr);
+    }
+}
+
+pub fn runtime_error(token: &Token, message: String) {
+    eprintln!("{}", message);
+    eprintln!("[line {}]", token.line);
+
+    unsafe {
+        HAD_RUNTIME_ERROR = true;
+    }
 }
 
 pub fn error_token(token: &Token, message: String) {

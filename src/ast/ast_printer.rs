@@ -2,7 +2,7 @@ use crate::ast::node::*;
 
 pub struct AstPrinter {}
 
-fn paranthesize(name: String, exprs: &[&Box<Expr>]) -> String {
+fn paranthesize(name: String, exprs: &[&Expr]) -> String {
     let mut ast_printer = AstPrinter {};
     let mut builder: String = String::new();
     builder.push_str(&("(".to_string() + &name));
@@ -11,7 +11,7 @@ fn paranthesize(name: String, exprs: &[&Box<Expr>]) -> String {
         builder.push_str(&(*expr).accept(&mut ast_printer));
     }
     builder.push_str(&(")".to_string()));
-    return builder;
+    builder
 }
 
 impl Visitor for AstPrinter {

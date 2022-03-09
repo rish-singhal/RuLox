@@ -32,7 +32,7 @@ impl Scanner {
             lexeme: String::from(""),
             line: self.line 
         });
-        return self.tokens.clone();
+        self.tokens.clone()
     }
 
     fn scan_token(&mut self) {
@@ -105,10 +105,10 @@ impl Scanner {
     fn advance(&mut self) -> char {
         self.current += 1;
         if let Some(c) = self.source.chars().nth(self.current as usize - 1) {
-            return c;
+            c
         } else {
             eprintln!("Error: Reached end of source but advance was called.");
-            return '\0';
+            '\0'
         }
     }
 
@@ -124,8 +124,12 @@ impl Scanner {
     }
 
     fn add_token_literal(&mut self, token: TokenType) {
-        let text = self.source[self.start as usize..self.current as usize]
+        let mut text = self.source[self.start as usize..self.current as usize]
             .to_string();
+        if let TokenType::LITERAL(Literal::STRING(_)) = token {
+            text.remove(0);
+            text.remove(text.len() - 1);
+        }
 
         self.tokens.push(Token{
             token_type: token,
@@ -139,7 +143,7 @@ impl Scanner {
     }
 
     fn is_alpha(&self, c: char) -> bool {
-        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+        ('a'..='z').contains(&c)|| ('A'..='Z').contains(&c) || c == '_'
     }
 
     fn is_alpha_numeric(&self, c: char) -> bool {
@@ -189,6 +193,7 @@ impl Scanner {
 
         if self.is_at_end() {
             error(self.line, "Unterminated string".to_string());
+            return;
         }
 
         // The closin "

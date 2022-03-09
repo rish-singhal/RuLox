@@ -1,5 +1,9 @@
 # Interpreter for Lox language
 
+## TODOS
+
+- [ ] Add tests for the interpreter, parser and lexer
+
 ## Instructions
 
 1. Compile the program
