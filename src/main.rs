@@ -10,7 +10,7 @@ use ast::ast_printer::AstPrinter;
 #[cfg(debug_lox)]
 use ast::node::*;
 
-use interpreter::interpreter::interpret;
+use interpreter::interpreter::Interpreter;
 use parser::parser::Parser;
 use token::token::Token;
 use token::token_type::TokenType;
@@ -103,8 +103,8 @@ fn run(source: String) {
             Expr::Literal(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
             Expr::Unary(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
         };
-
-        interpret(&expr);
+        let interpreter = Interpreter {};
+        interpreter.interpret(&expr);
     }
 }
 

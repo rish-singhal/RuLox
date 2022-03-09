@@ -1,57 +1,43 @@
 use crate::runtime_error;
 use crate::ast::node::*;
 use crate::token::token::Token;
-use crate::token::token_type;
 use crate::token::token_type::TokenType;
-
-use std::any::{Any, TypeId};
-
-fn evaluate(expr: &Box<Expr>) -> Result<TokenType, InterpreterError> {
-    (*expr).accept(&mut Interpreter {})
-}
-
-
-// TODO: to implement printing of string type
-pub fn interpret(expr: &Box<Expr>) {
-    match evaluate(expr) {
-        Ok(value) => {
-            let value_type = (&*value).type_id();
-
-             //TODO: simplify printing concrete type behind dyn Any by deconstructing? 
-             if value_type == TypeId::of::<String>() {
-                 println!("{}", value.downcast_ref::<String>().unwrap());
-             } else if value_type == TypeId::of::<bool>() {
-                 println!("{}", value.downcast_ref::<bool>().unwrap());
-             } else if value_type == TypeId::of::<f64>() {
-                 println!("{}", value.downcast_ref::<f64>().unwrap());
-             } else {
-                 println!("nil");
-             }
-        },
-        Err(error) => {
-            runtime_error(&error.token, error.message);
-        }
-    }
-}
-
-fn is_truthy (
-    value: Result<Box<dyn Any>, InterpreterError>
-) -> bool {
-    match value {
-        Ok(v) => { 
-            if (&*v).type_id() == TypeId::of::<bool>() {
-                return *v.downcast_ref::<bool>().unwrap();
-            } else {
-                true
-            }
-        }
-        Err(_) => false
-    }
-}
+use crate::token::value::Value;
 
 
 // NOTE: struct A; works too apart from struct A {} 
 pub struct Interpreter;
+
+impl Interpreter {
+
+    fn evaluate(&self, expr: &Expr) -> Result<Value, InterpreterError> {
+        (*expr).accept(&mut Interpreter {})
+    }
+
+    pub fn interpret(&self, expr: &Expr) {
+        match self.evaluate(expr) {
+            Ok(value) => println!("{}", value),
+            Err(error) => runtime_error(&error.token, error.message)
+        }
+    }
+
+    fn is_truthy (&self, value: &Value) -> Value {
+        match *value {
+            Value::Nil => Value::Bool(false),
+            Value::Bool(b) => Value::Bool(b),
+            _ => Value::Bool(true)
+        }
+    }
+
+    fn is_equal (&self, a: &Value, b: &Value) -> bool {
+        match (a, b)  {
+            (Value::Nil, Value::Nil) => true,
+            (Value::Nil, _) => false,
+            (Value::Number(u), Value::Number(v)) => (u - v).abs() <= 1e-6, 
+            _ => a == b,
+        }
+    }
+}
 
 
 pub struct InterpreterError {
@@ -60,153 +46,104 @@ pub struct InterpreterError {
 }
 
 impl Visitor for Interpreter {
-    type R = Result<TokenType, InterpreterError>;
+    type R = Result<Value, InterpreterError>;
 
     fn visit_binary (&self, binary: &Binary) -> Self::R {
-        let left = evaluate(&binary.left)?;
-        let right = evaluate(&binary.right)?;
+        let left = self.evaluate(&binary.left)?;
+        let right = self.evaluate(&binary.right)?;
 
-        // TODO: BangEqual and EqualEqual need to be implemented for all
-        // types.
-        //
-        // TODO: can this be simplified?
-        // adding different types?
-        if let Some(left_str) = left.downcast_ref::<String>() {
-            if let Some(right_str) = right.downcast_ref::<String>() {
-                match binary.operator.token_type {
-                    TokenType::PLUS =>
-                        return Ok(Box::new(left_str.clone()
-                                           + &right_str.clone())),
-                    TokenType::BangEqual => 
-                        return Ok(Box::new(left_str != right_str)),
-                    TokenType::EqualEqual => 
-                        return Ok(Box::new(left_str == right_str)),
-                    _ => {
-                        return Err(InterpreterError {
-                            token: binary.operator.clone(),
-                            message:
-                                String::from(
-                                    "Operator not supported on type Strings"
-                                )
-                        });
-                    }
-                }
-            } else {
-                return Err(InterpreterError {
-                    token: binary.operator.clone(),
-                    message:
-                        String::from(
-                            "Only 2 strings can be operated on together"
-                        )
-                });
-            };
-        };
-
-
-        let left_value =  match left.downcast_ref::<f64>() {
-            Some(f) => *f,
-            None => {
-                return Err(InterpreterError {
-                    token: binary.operator.clone(),
-                    message:
-                        String::from("Operands must be numbers")
-                });
-            }
-        };
-
-        let right_value = match right.downcast_ref::<f64>() {
-            Some(f) => *f,
-            None => {
-                return Err(InterpreterError {
-                    token: binary.operator.clone(),
-                    message:
-                        String::from("Operands must be numbers")
-                });
-            }
-        };
-
-        // TODO: Implement BangEqual and EqualEqual for other types
-        // https://craftinginterpreters.com/evaluating-expressions.html
         match binary.operator.token_type {
-            TokenType::MINUS => Ok(Box::new(left_value - right_value)),
-            TokenType::SLASH => Ok(Box::new(left_value / right_value)),
-            TokenType::STAR => Ok(Box::new(left_value * right_value)),
-            TokenType::PLUS => Ok(Box::new(left_value + right_value)),
-            TokenType::GREATER => Ok(Box::new(left_value > right_value)),
-            TokenType::GreaterEqual =>
-                Ok(Box::new(left_value >= right_value)),
-            TokenType::LESS => Ok(Box::new(left_value < right_value)),
-            TokenType::LessEqual => Ok(Box::new(left_value <= right_value)),
-            TokenType::BangEqual => Ok(Box::new(left_value != right_value)),
-            TokenType::EqualEqual => Ok(Box::new(left_value == right_value)),
-            _ => Err(InterpreterError {
-                token: binary.operator.clone(),
-                message: String::from("Unsupported operator")
-            })
+            TokenType::BangEqual => 
+                Ok(Value::Bool(!self.is_equal(&left, &right))),
+            TokenType::EqualEqual =>
+                Ok(Value::Bool(self.is_equal(&left, &right))),
+            _ => {
+                match (left, right) {
+                    (Value::Number(a), Value::Number(b)) => {
+                        match binary.operator.token_type {
+                            TokenType::MINUS => Ok(Value::Number(a - b)),
+                            TokenType::SLASH => Ok(Value::Number(a / b)),
+                            TokenType::STAR => Ok(Value::Number(a * b)),
+                            TokenType::PLUS => Ok(Value::Number(a + b)),
+                            TokenType::GREATER => Ok(Value::Bool(a > b)),
+                            TokenType::GreaterEqual => Ok(Value::Bool(a >= b)),
+                            TokenType::LESS => Ok(Value::Bool(a < b)),
+                            TokenType::LessEqual => Ok(Value::Bool(a <= b)),
+                            _ => Err(InterpreterError {
+                                token: binary.operator.clone(),
+                                message:
+                                    String::from(
+                                        "Operator not supported on type\
+                                        Numbers"
+                                    )
+                            })
+                        }
+                    },
+                    (Value::String(a), Value::String(b)) => {
+                        match binary.operator.token_type {
+                            TokenType::PLUS => Ok(Value::String(a + &b)),
+                            _ => Err(InterpreterError {
+                                token: binary.operator.clone(),
+                                message:
+                                    String::from(
+                                        "Operator not supported on type\
+                                        Strings"
+                                    )
+                            })
+                        }
+                    },
+                    _ => Err(InterpreterError {
+                        token: binary.operator.clone(),
+                        message:
+                            String::from(
+                                "Invalid operation"
+                            )
+                        }),
+                    }
+            }
         }
+
     }
 
     fn visit_grouping (&self, grouping: &Grouping) -> Self::R {
-        evaluate(&grouping.expression)
+        self.evaluate(&grouping.expression)
     }
 
     fn visit_literal (&self, literal: &Literal) -> Self::R {
-        return literal.value.token_type.clone()
-        match literal.value.token_type {
-            TokenType::LITERAL(token_type::Literal::NUMBER(_)) =>
-                Ok(
-                    literal.value.lexeme
-                        .parse::<f64>()
-                        .map(Box::new)
-                        .map_err(
-                                |_| InterpreterError {
-                                    token: literal.value.clone(),
-                                    message: String::from("Literal NUMBER\
-                                                          contains a not-\
-                                                          float value.")
-                                }
-                        )?
-                  ),
-            TokenType::LITERAL(token_type::Literal::IDENTIFIER(_)) =>
-                Ok(Box::new(literal.value.lexeme.to_string())),
-            TokenType::LITERAL(token_type::Literal::STRING(_)) =>
-                Ok(Box::new(literal.value.lexeme.to_string())),
-            TokenType::TRUE => Ok(Box::new(true)),
-            TokenType::FALSE => Ok(Box::new(false)),
-            _ => Err(InterpreterError {
-                token: literal.value.clone(),
-                message: String::from("Literal not supported.")
-            })
-        }
+        Ok(Value::from(literal.value.token_type.clone()))
     }
 
     fn visit_unary (&self, unary: &Unary) -> Self::R {
-        let right = evaluate(&unary.right);
+        let right = self.evaluate(&unary.right)?;
+
         // https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object
+        // my previous implementation^ used Box<dyn Any>
         match unary.operator.token_type {
             TokenType::MINUS => {
-                match right?.downcast_ref::<f64>() {
-                    Some(f) => Ok(Box::new(-f)),
-                    None => Err(InterpreterError {
+                match right {
+                    Value::Number(n) => Ok(Value::Number(-n)),
+                    _ => Err(InterpreterError {
                         token: unary.operator.clone(),
-                        message: String::from("Operand must be a number.")
-                    })
+                        message: String::from("Only number can be operated\
+                                              on with unary MINUS opeartor")
+                    }),
                 }
             },
             TokenType::BANG => {
-                match right {
-                    Ok(right_value) => {
-                        match right_value.downcast_ref::<bool>() {
-                            Some(f) => Ok(Box::new(!f)),
-                            None => Ok(Box::new(true))
-                        }
-                    },
-                    Err(_) => Ok(Box::new(false))
+                if let Value::Bool(b) = self.is_truthy(&right) {
+                    Ok(Value::Bool(!b))
+                } else {
+                    // always returns a type of Value::Bool
+                    Err(InterpreterError {
+                        token: unary.operator.clone(),
+                        message: String::from("Bang Operator only works on\
+                                              literal")
+                    })
                 }
             },
             _ => Err(InterpreterError {
                 token: unary.operator.clone(),
-                message: String::from("Operator must be MINUS/BANG.")
+                message: String::from("Unary Operator must be MINUS/BANG.")
             })
         }
     }
