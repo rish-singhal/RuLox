@@ -5,10 +5,8 @@ pub mod tests;
 pub mod token;
 pub mod lexer;
 
-#[cfg(debug_lox)]
-use ast::ast_printer::AstPrinter;
-#[cfg(debug_lox)]
-use ast::node::*;
+// use ast::ast_printer::AstPrinter;
+// use ast::node::*;
 
 use interpreter::interpreter::Interpreter;
 use parser::parser::Parser;
@@ -80,8 +78,7 @@ fn run_prompt() {
 }
 
 fn run(source: String) {
-    #[cfg(debug_lox)]
-    println!("source: {}", source);
+    // println!("source: {}", source);
 
     let tokens = Scanner::new(source).scan_tokens();
 
@@ -91,18 +88,16 @@ fn run(source: String) {
         }
     }
 
-    #[cfg(debug_lox)]
-    println!("tokens: {:?}", tokens);
+    // println!("tokens: {:?}", tokens);
 
     let mut parser = Parser::new(tokens);
     if let Some(expr) = parser.parse() {
-        #[cfg(debug_lox)]
-        match &(*expr) {
-            Expr::Binary(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
-            Expr::Grouping(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
-            Expr::Literal(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
-            Expr::Unary(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
-        };
+        // match &(*expr) {
+        //     Expr::Binary(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
+        //     Expr::Grouping(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
+        //     Expr::Literal(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
+        //     Expr::Unary(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
+        // };
         let interpreter = Interpreter {};
         interpreter.interpret(&expr);
     }

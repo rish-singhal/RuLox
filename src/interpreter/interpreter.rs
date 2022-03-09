@@ -14,14 +14,15 @@ impl Interpreter {
         (*expr).accept(&mut Interpreter {})
     }
 
-    pub fn interpret(&self, expr: &Expr) {
-        match self.evaluate(expr) {
-            Ok(value) => println!("{}", value),
-            Err(error) => runtime_error(&error.token, error.message)
+    pub fn interpret(&self, stmts: &[Stmt]) {
+        for stmt in stmts {
+            if let Err(error) = self.execute(stmt) {
+                runtime_error(&error.token, error.message)
+            }
         }
     }
 
-    fn is_truthy (&self, value: &Value) -> Value {
+    fn is_truthy(&self, value: &Value) -> Value {
         match *value {
             Value::Nil => Value::Bool(false),
             Value::Bool(b) => Value::Bool(b),
@@ -29,13 +30,17 @@ impl Interpreter {
         }
     }
 
-    fn is_equal (&self, a: &Value, b: &Value) -> bool {
+    fn is_equal(&self, a: &Value, b: &Value) -> bool {
         match (a, b)  {
             (Value::Nil, Value::Nil) => true,
             (Value::Nil, _) => false,
             (Value::Number(u), Value::Number(v)) => (u - v).abs() <= 1e-6, 
             _ => a == b,
         }
+    }
+
+    fn execute(&self, stmt: &Stmt) -> Result<Value, InterpreterError>{
+        stmt.accept(&mut Self)
     }
 }
 
@@ -146,6 +151,21 @@ impl Visitor for Interpreter {
                 message: String::from("Unary Operator must be MINUS/BANG.")
             })
         }
+    }
+}
+
+impl StmtVisitor for Interpreter {
+    type R = Result<Value, InterpreterError>;
+
+    fn visit_expression (&self, expression: &Expression) -> Self::R {
+        self.evaluate(&expression.expression)?;
+        Ok(Value::Nil)
+    }
+
+    fn visit_print (&self, print: &Print) -> Self::R {
+        let value = self.evaluate(&print.expression)?;
+        println!("{} ", value);
+        Ok(Value::Nil)
     }
 }
 

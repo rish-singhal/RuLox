@@ -25,13 +25,39 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Option<Box<Expr>> {
-        match self.expression() {
-            Ok(expr) => Some(expr),
-            Err(_) => None
+    pub fn parse(&mut self) -> Option<Vec<Stmt>> {
+        let mut statements: Vec<Stmt> = vec![];
+        while !self.is_at_end() {
+            if let Ok(stmt) = self.statement() {
+                statements.push(stmt);
+            }
         }
+        // TODO: to remove the following
+        //     Ok(expr) => Some(expr),
+        //     Err(_) => None
+        // }
+        Some(statements)
     }
 
+    fn statement(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_token(&[TokenType::PRINT]) {
+            return self.print_statement();
+        }
+        self.expression_statement()
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, ParseError>  {
+        let expression = self.expression()?;
+        self.consume(&TokenType::SEMICOLON, "Expected ';' after value.")?;
+        Ok(Stmt::Print(Print { expression }))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
+        let expression = self.expression()?;
+        self.consume(&TokenType::SEMICOLON, "Expected ';' after expression.")?;
+        Ok(Stmt::Expression(Expression { expression }))
+
+    }
 
     fn match_token(&mut self, tokens_types: &[TokenType]) -> bool {
         for token_type in tokens_types {
@@ -59,10 +85,7 @@ impl Parser {
     }
 
     fn is_at_end(&mut self) -> bool {
-        match self.peek().token_type {
-            TokenType::EOF => return true,
-            _ => return false,
-        }
+        matches!(self.peek().token_type, TokenType::EOF)
     }
 
     fn peek(&self) -> &Token {
@@ -117,7 +140,7 @@ impl Parser {
 
     // methods for parsing productions
     fn expression(&mut self) -> Result<Box<Expr>, ParseError> {
-        Ok(self.equality()?)
+        self.equality()
     }
 
     fn equality(&mut self) -> Result<Box<Expr>, ParseError> {
