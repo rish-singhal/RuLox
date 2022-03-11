@@ -92,8 +92,8 @@ impl Scanner {
             _ => {
                 if c.is_digit(10) {
                     self.number();
-                } else if self.is_alpha(c){
-                    self.identifier();
+                } else if self.is_alpha(c) {
+                    self.reserved_words();
                 }
                 else {
                     error(self.line, "Unexpected character.".to_string());
@@ -126,6 +126,7 @@ impl Scanner {
     fn add_token_literal(&mut self, token: TokenType) {
         let mut text = self.source[self.start as usize..self.current as usize]
             .to_string();
+
         if let TokenType::LITERAL(Literal::STRING(_)) = token {
             text.remove(0);
             text.remove(text.len() - 1);
@@ -228,14 +229,14 @@ impl Scanner {
         self.add_token_literal(TokenType::LITERAL(Literal::NUMBER(value)));
     }
 
-    fn identifier(&mut self) {
+    fn reserved_words(&mut self) {
         while self.is_alpha_numeric(self.peek()) {
             self.advance();
         }
 
-        let text: String = 
+        let text =
             self.source[self.start as usize..self.current as usize]
-                .to_string();
+            .to_string();
 
         self.add_token(get_token_type(text));
     }

@@ -4,7 +4,6 @@ use crate::token::token::Token;
 use crate::token::token_type;
 use crate::token::token_type::TokenType;
 
-// TODO: Unwind the stack if there is an error, and call synchronize()
 // TODO: Check style guide for rust
 
 struct ParseError {}
@@ -17,7 +16,6 @@ pub struct Parser {
 
 impl Parser {
 
-
     pub fn new(tokens: Vec<Token>) -> Parser {
         Parser {
             tokens,
@@ -28,15 +26,44 @@ impl Parser {
     pub fn parse(&mut self) -> Option<Vec<Stmt>> {
         let mut statements: Vec<Stmt> = vec![];
         while !self.is_at_end() {
-            if let Ok(stmt) = self.statement() {
-                statements.push(stmt);
+            if let Ok(decl) = self.declaration() {
+                statements.push(decl);
             }
         }
-        // TODO: to remove the following
-        //     Ok(expr) => Some(expr),
-        //     Err(_) => None
-        // }
         Some(statements)
+    }
+
+    fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_token(&[TokenType::VAR]) {
+            match self.var_declaration() {
+                Ok(v) => return Ok(v),
+                Err(e) => {
+                    self.synchronize();
+                    return Err(e);
+                }
+            };
+        };
+
+        self.statement()
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name = match &self.peek().token_type {
+            TokenType::LITERAL(token_type::Literal::IDENTIFIER(_))
+            => Ok(self.advance().clone()),
+            _ => Err(self.error(self.peek(), "Expect variable name."))
+        };
+
+        let name = name?;
+
+        let mut initializer = None;
+        if self.match_token(&[TokenType::EQUAL]) {
+            initializer = Some(self.expression()?);
+        }
+
+        self.consume(&TokenType::SEMICOLON, "Expected ';' after variable \
+                                                declaration.")?;
+        Ok(Stmt::Var(Var {name, initializer}))
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
@@ -256,6 +283,13 @@ impl Parser {
                     Literal { value: self.previous().clone() }
                 )))
             },
+            TokenType::LITERAL(token_type::Literal::IDENTIFIER(_))
+            => {
+                self.advance();
+                Ok(Box::new(Expr::Variable(
+                    Variable { name: self.previous().clone() }
+                )))
+            }
             _ => {
 
                 if self.match_token(&[TokenType::LeftParen]) {

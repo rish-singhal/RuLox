@@ -1,27 +1,20 @@
 #!/usr/bin/python3
 
-# pub enum Expr {
-#     Binary(Binary),
-# }
-
-# pub struct Binary {
-#     pub left: Box<Expr>,
-#     pub operator: Token,
-#     pub right: Box<Expr>,
-# }
-
 import sys
 
 base_productions = {
     "Expr": [
+      "Assign   : Token name, Expr value",
       "Binary   : Expr left, Token operator, Expr right",
       "Grouping : Expr expression",
       "Literal  : Token value",
       "Unary    : Token operator, Expr right",
+      "Variable : Token name"
     ],
     "Stmt": [
         "Expression : Expr expression",
         "Print : Expr expression",
+        "Var : Token name, Option<Box<Expr>> initializer"
     ]
 }
 
@@ -38,7 +31,7 @@ def define_visitor(f, base_name, types):
     f.write("    type R;\n")
     for node_type in types:
         node_type = node_type.strip().split(":")[0].strip()
-        f.write("    fn visit_{} (&self, {}: &{}) -> Self::R;\n"
+        f.write("    fn visit_{} (&mut self, {}: &{}) -> Self::R;\n"
                 .format(
                         node_type.lower(),
                         node_type.lower(),
@@ -109,7 +102,7 @@ def main():
                 f.write("impl {} {{\n".format(class_name))
                 f.write("    pub fn accept<T: {}> "
                         .format(get_visitor_name(base_class)))
-                f.write("(&self, visitor: &mut T) -> T::R {\n")
+                f.write("(&mut self, visitor: &mut T) -> T::R {\n")
                 f.write("        visitor.visit_{}(self)\n"
                         .format(class_name.lower()))
                 f.write("    }\n")

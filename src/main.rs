@@ -1,19 +1,19 @@
 pub mod ast;
 pub mod interpreter;
 pub mod parser;
-pub mod tests;
 pub mod token;
 pub mod lexer;
 
 // use ast::ast_printer::AstPrinter;
 // use ast::node::*;
-
-use interpreter::interpreter::Interpreter;
+use interpreter::{
+    environment::Environment,
+    interpreter::Interpreter
+};
 use parser::parser::Parser;
 use token::token::Token;
 use token::token_type::TokenType;
 use lexer::scanner::Scanner;
-use tests::test_ast_printer::test_ast_printer;
 
 use std::env;
 use std::fs;
@@ -30,12 +30,7 @@ fn main() {
     match args_count {
         1 => run_prompt(),
         2 => {
-            let script = env::args().nth(1).unwrap();
-            if script == "test" {
-                test_ast_printer();
-            } else {
-                run_file(env::args().nth(1).unwrap());
-            }
+            run_file(env::args().nth(1).unwrap());
         }
         _ => {
             eprintln!("Usage: rulox [script]");
@@ -47,8 +42,9 @@ fn main() {
 fn run_file(path: String) {
     let contents = fs::read_to_string(path)
         .expect("Error reading script");
+    let mut env = Environment::new();
 
-    run(contents);
+    run(contents, &mut env);
 
     unsafe{
         if HAD_ERROR {
@@ -61,13 +57,14 @@ fn run_file(path: String) {
 
 // READ-EVAL-PRINT-LOOP (REPL)
 fn run_prompt() {
+    let mut env= Environment::new();
     loop {
         print!("> ");
         io::stdout().flush().unwrap();
         let mut line = String::new();
 
         if io::stdin().read_line(&mut line).is_ok() {
-            run(line);
+            run(line, &mut env);
             unsafe {
                 HAD_ERROR = false;
             }
@@ -77,7 +74,7 @@ fn run_prompt() {
     }
 }
 
-fn run(source: String) {
+fn run(source: String, env: &mut Environment) {
     // println!("source: {}", source);
 
     let tokens = Scanner::new(source).scan_tokens();
@@ -92,20 +89,13 @@ fn run(source: String) {
 
     let mut parser = Parser::new(tokens);
     if let Some(expr) = parser.parse() {
-        // match &(*expr) {
-        //     Expr::Binary(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
-        //     Expr::Grouping(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
-        //     Expr::Literal(n) => println!("AST: {}", n.accept(&mut AstPrinter {})),
-        //     Expr::Unary(n)=> println!("AST: {}", n.accept(&mut AstPrinter {})),
-        // };
-        let interpreter = Interpreter {};
+        let mut interpreter = Interpreter::from(env);
         interpreter.interpret(&expr);
     }
 }
 
 pub fn runtime_error(token: &Token, message: String) {
-    eprintln!("{}", message);
-    eprintln!("[line {}]", token.line);
+    eprintln!("[line {}]: {}", token.line, message);
 
     unsafe {
         HAD_RUNTIME_ERROR = true;
@@ -116,7 +106,7 @@ pub fn error_token(token: &Token, message: String) {
     match token.token_type {
         TokenType::EOF => report(token.line, " at end".to_string(), message),
         _ => report(token.line,
-                    format!(" at '{}'", token.lexeme).to_string(),
+                    format!(" at '{}'", token.lexeme),
                     message)
     }
 }

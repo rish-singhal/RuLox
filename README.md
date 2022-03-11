@@ -32,6 +32,23 @@ $ ./lox [FILE_NAME]
 
 ## Syntax Grammar
 
+### Version 4 (global variables)
+
+```text
+program -> declaration* EOF;
+
+declaration -> varDecl
+            | statement;
+varDecl -> "var" IDENTIFIER ("=" expression)? ";";
+primary -> NUMBER | STRING | "true" | "false" | "nil"
+        | "(" expression ")"
+        | IDENTIFIER;
+
+expression -> assignment;
+assignment -> IDENTIFIER "=" assingment
+            | equality;
+```
+
 ### Version 3 (Statements)
 
 ```text

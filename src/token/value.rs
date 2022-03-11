@@ -5,7 +5,7 @@ use std::fmt;
 // https://github.com/brightly-salty/rox/blob/master/src/value.rs
 // The idea of Value apart from using Box<dyn Any> is good
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Value {
     String(String),
     Number(f64),
