@@ -167,8 +167,31 @@ impl Parser {
 
     // methods for parsing productions
     fn expression(&mut self) -> Result<Box<Expr>, ParseError> {
-        self.equality()
+        self.assingment()
     }
+
+    fn assingment(&mut self) -> Result<Box<Expr>, ParseError> {
+        let expr = self.equality()?;
+
+        if self.match_token(&[TokenType::EQUAL]) {
+            let equals = self.previous().clone();
+            let value = self.assingment()?;
+
+            if let Expr::Variable(v) = *expr {
+                Ok(Box::new(Expr::Assign(
+                    Assign {
+                        name: v.name,
+                        value,
+                    }
+                )))
+            } else {
+                Err(self.error(&equals, "Invalid assignment type."))
+            }
+        } else {
+            Ok(expr)
+        }
+    }
+
 
     fn equality(&mut self) -> Result<Box<Expr>, ParseError> {
         let mut expr = self.comparison()?;

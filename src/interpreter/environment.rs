@@ -23,6 +23,19 @@ impl Environment {
        Environment { values: HashMap::new() } 
     }
 
+    pub fn assign(&mut self, name: Token, value: Value) -> Result<(), RunTimeError>{
+        match self.values.get(&name.lexeme) {
+            Some(_) => {
+                *self.values.get_mut(&name.lexeme).unwrap() = value;
+                Ok(())
+            },
+            None => return Err(RunTimeError {
+                name: name.clone(),
+                message: format!("Undefined variable '{}'.", name.lexeme),
+            }),
+        }
+    }
+
     pub fn define_var(&mut self, name: String, value: Value) {
         self.values.insert(name, value);
     }

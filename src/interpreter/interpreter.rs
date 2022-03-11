@@ -74,6 +74,12 @@ impl From<RunTimeError> for InterpreterError {
 impl Visitor for Interpreter<'_> {
     type R = Result<Value, InterpreterError>;
 
+    fn visit_assign(&mut self, assign: &Assign) -> Self::R {
+        let value = self.evaluate(&assign.value)?;
+        self.environment.assign(assign.name.clone(), value.clone())?; 
+        return Ok(value);
+    }
+
     fn visit_binary (&mut self, binary: &Binary) -> Self::R {
         let left = self.evaluate(&binary.left)?;
         let right = self.evaluate(&binary.right)?;

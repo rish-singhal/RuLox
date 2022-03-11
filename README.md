@@ -3,6 +3,7 @@
 ## TODOS
 
 - [ ] Add tests for the interpreter, parser and lexer
+- [ ] Handle case `print ;`
 
 ## Instructions
 
